@@ -21,8 +21,6 @@ class NameView extends StatelessWidget {
   Widget build(BuildContext context) {
     _nameController.text = context.read<NameCubit>().state;
 
-    // BlocBuilder<NameCubit, String>(builder: ,)
-
     return Scaffold(
       appBar: AppBar(title: const Text('Change name')),
       body: Column(
