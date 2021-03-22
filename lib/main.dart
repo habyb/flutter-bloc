@@ -1,9 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutterbloc/screens/dashboard.dart';
 
 import 'components/theme.dart';
 import 'package:flutter/material.dart';
 
-import 'screens/name.dart';
 
 void main() {
   runApp(FlutterBloc());
@@ -24,7 +24,7 @@ class FlutterBloc extends StatelessWidget {
     Bloc.observer = LogObserver();
     return MaterialApp(
       theme: bytebankTheme,
-      home: NameContainer(),
+      home: DashboardContainer(),
     );
   }
 }
