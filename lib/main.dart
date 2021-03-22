@@ -1,6 +1,7 @@
 import 'components/theme.dart';
-import 'screens/dashboard.dart';
 import 'package:flutter/material.dart';
+
+import 'screens/counter.dart';
 
 void main() {
   runApp(FlutterBloc());
@@ -12,7 +13,7 @@ class FlutterBloc extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: bytebankTheme,
-      home: Dashboard(),
+      home: CounterContainer(),
     );
   }
 }
