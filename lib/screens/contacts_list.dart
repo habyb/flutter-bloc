@@ -1,17 +1,26 @@
+import 'package:flutterbloc/components/container.dart';
 import 'package:flutterbloc/database/dao/contact_dao.dart';
 import 'package:flutterbloc/models/contact.dart';
 import 'package:flutterbloc/screens/contact_form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterbloc/screens/transaction_form.dart';
 
-class ContactsList extends StatefulWidget {
+class ContactsListContainer extends BlocContainer {
   @override
-  _ContactsListState createState() => _ContactsListState();
+  Widget build(BuildContext context) {
+    return ContactsList();
+  }
 }
 
-class _ContactsListState extends State<ContactsList> {
+class ContactsList extends StatefulWidget {
   final ContactDao _dao = ContactDao();
+  @override
+  State<StatefulWidget> createState() {
+    return _ContactListState();
+  }
+}
 
+class _ContactListState extends State<ContactsList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,7 +29,7 @@ class _ContactsListState extends State<ContactsList> {
       ),
       body: FutureBuilder<List<Contact>>(
         initialData: [],
-        future: _dao.findAll(),
+        future: widget._dao.findAll(),
         builder: (context, snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.none:
@@ -52,23 +61,32 @@ class _ContactsListState extends State<ContactsList> {
           return Text('Unkown error');
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context)
-              .push(
-                MaterialPageRoute(
-                  builder: (context) => ContactForm(),
-                ),
-              )
-              .then(
-                (value) => setState(() {}),
-              );
-        },
-        child: Icon(
-          Icons.add,
-        ),
+      floatingActionButton: buildAddContactButton(context),
+    );
+  }
+
+  FloatingActionButton buildAddContactButton(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: () {
+        Navigator.of(context)
+            .push(
+              MaterialPageRoute(
+                builder: (context) => ContactForm(),
+              ),
+            )
+            .then(
+              (value) => update(),
+            );
+      },
+      child: Icon(
+        Icons.add,
       ),
     );
+  }
+
+  // not correct
+  update() {
+    setState(() {});
   }
 }
 
