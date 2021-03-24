@@ -8,4 +8,4 @@ final Client client = HttpClientWithInterceptor.build(
   requestTimeout: Duration(seconds: 5),
 );
 
-const String baseUrl = 'https://1ae6e93e7ba6.ngrok.io/transactions';
+const String baseUrl = 'https://bcd68e426002.ngrok.io/transactions';
