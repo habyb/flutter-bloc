@@ -18,8 +18,6 @@ class DashboardContainer extends BlocContainer {
 class DashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final name = context.read<NameCubit>().state;
-
     return Scaffold(
       appBar: AppBar(
         title: BlocBuilder<NameCubit, String>(
