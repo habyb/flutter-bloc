@@ -32,12 +32,51 @@ class SentState extends TransactionFormState {
 }
 
 @immutable
-class FatalErrorContactsListState extends TransactionFormState {
-  const FatalErrorContactsListState();
+class FatalErrorFormState extends TransactionFormState {
+  final String _message;
+
+  const FatalErrorFormState(this._message);
 }
 
 class TransactionFormCubit extends Cubit<TransactionFormState> {
   TransactionFormCubit() : super(ShowFormState());
+
+  void save(Transaction transactionCreated, String password, BuildContext context) async {
+    emit(SendingState());
+    Transaction transaction = await _send(
+      transactionCreated,
+      password,
+      context,
+    );
+    emit(SentState());
+    // _showSuccessMessage(transaction, context);
+  }
+
+  Future<Transaction> _send(Transaction transactionCreated, String password,
+      BuildContext context) async {
+    // setState(() {
+    //   _sending = true;
+    // });
+
+    final Transaction transaction =
+        await TransactionWebClient().save(transactionCreated, password).catchError((e) {
+          emit(FatalErrorFormState(e.message));
+      // _showFailureMessage(context, message: e.message);
+    }, test: (e) => e is HttpException).catchError((e) {
+      emit(FatalErrorFormState('timeout submitting the transaction'));
+      // _showFailureMessage(context,
+      //     message: 'timeout submitting the transaction');
+    }, test: (e) => e is TimeoutException).catchError((e) {
+      emit(FatalErrorFormState(e.message));
+      // _showFailureMessage(context);
+    }).whenComplete(() {
+      // setState(() {
+      //   _sending = false;
+      // });
+    });
+
+    return transaction;
+  }
 }
 
 class TransactionFormContainer extends BlocContainer {
@@ -56,8 +95,6 @@ class TransactionFormContainer extends BlocContainer {
 }
 
 class TransactionFormStateless extends StatelessWidget {
-  final TransactionWebClient _webClient = TransactionWebClient();
-
   final Contact _contact;
 
   TransactionFormStateless(this._contact);
@@ -75,27 +112,13 @@ class TransactionFormStateless extends StatelessWidget {
         if (state is SentState) {
           Navigator.pop(context);
         }
-        if (state is FatalErrorContactsListState) {
+        if (state is FatalErrorFormState) {
           // Error Screen
         }
         return Text('Error!!');
       },
     );
-  }
-
-  void _save(
-    Transaction transactionCreated,
-    String password,
-    BuildContext context,
-  ) async {
-    Transaction transaction = await _send(
-      transactionCreated,
-      password,
-      context,
-    );
-
-    _showSuccessMessage(transaction, context);
-  }
+  } 
 
   Future _showSuccessMessage(
       Transaction transaction, BuildContext context) async {
@@ -107,29 +130,6 @@ class TransactionFormStateless extends StatelessWidget {
           });
       Navigator.pop(context);
     }
-  }
-
-  Future<Transaction> _send(Transaction transactionCreated, String password,
-      BuildContext context) async {
-    // setState(() {
-    //   _sending = true;
-    // });
-
-    final Transaction transaction =
-        await _webClient.save(transactionCreated, password).catchError((e) {
-      _showFailureMessage(context, message: e.message);
-    }, test: (e) => e is HttpException).catchError((e) {
-      _showFailureMessage(context,
-          message: 'timeout submitting the transaction');
-    }, test: (e) => e is TimeoutException).catchError((e) {
-      _showFailureMessage(context);
-    }).whenComplete(() {
-      // setState(() {
-      //   _sending = false;
-      // });
-    });
-
-    return transaction;
   }
 
   void _showFailureMessage(BuildContext context,
@@ -205,8 +205,7 @@ class _BasicForm extends StatelessWidget {
                           builder: (contextDialog) {
                             return TransactionAuthDialog(
                               onConfirm: (String password) {
-                                // Send
-                                // _save(transactionCreated, password, context);
+                                BlocProvider.of<TransactionFormCubit>(context).save(transactionCreated, password, context);
                               },
                             );
                           });
