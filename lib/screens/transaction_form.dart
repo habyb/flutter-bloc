@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutterbloc/components/container.dart';
+import 'package:flutterbloc/components/error.dart';
 import 'package:flutterbloc/components/progress.dart';
 import 'package:flutterbloc/components/response_dialog.dart';
 import 'package:flutterbloc/components/transaction_auth_dialog.dart';
@@ -41,41 +42,28 @@ class FatalErrorFormState extends TransactionFormState {
 class TransactionFormCubit extends Cubit<TransactionFormState> {
   TransactionFormCubit() : super(ShowFormState());
 
-  void save(Transaction transactionCreated, String password, BuildContext context) async {
+  void save(Transaction transactionCreated, String password,
+      BuildContext context) async {
     emit(SendingState());
-    Transaction transaction = await _send(
+    await _send(
       transactionCreated,
       password,
       context,
     );
-    emit(SentState());
-    // _showSuccessMessage(transaction, context);
   }
 
-  Future<Transaction> _send(Transaction transactionCreated, String password,
+  _send(Transaction transactionCreated, String password,
       BuildContext context) async {
-    // setState(() {
-    //   _sending = true;
-    // });
-
-    final Transaction transaction =
-        await TransactionWebClient().save(transactionCreated, password).catchError((e) {
-          emit(FatalErrorFormState(e.message));
-      // _showFailureMessage(context, message: e.message);
+    await TransactionWebClient()
+        .save(transactionCreated, password)
+        .then((transaction) => emit(SentState()))
+        .catchError((e) {
+      emit(FatalErrorFormState(e.message));
     }, test: (e) => e is HttpException).catchError((e) {
       emit(FatalErrorFormState('timeout submitting the transaction'));
-      // _showFailureMessage(context,
-      //     message: 'timeout submitting the transaction');
     }, test: (e) => e is TimeoutException).catchError((e) {
       emit(FatalErrorFormState(e.message));
-      // _showFailureMessage(context);
-    }).whenComplete(() {
-      // setState(() {
-      //   _sending = false;
-      // });
     });
-
-    return transaction;
   }
 }
 
@@ -89,7 +77,13 @@ class TransactionFormContainer extends BlocContainer {
       create: (BuildContext context) {
         return TransactionFormCubit();
       },
-      child: TransactionFormStateless(_contact),
+      child: BlocListener<TransactionFormCubit, TransactionFormState>(
+          listener: (context, state) {
+            if (state is SentState) {
+              Navigator.pop(context);
+            }
+          },
+          child: TransactionFormStateless(_contact)),
     );
   }
 }
@@ -106,19 +100,16 @@ class TransactionFormStateless extends StatelessWidget {
         if (state is ShowFormState) {
           return _BasicForm(_contact);
         }
-        if (state is SendingState) {
+        if (state is SendingState || state is SentState) {
           return ProgressView();
         }
-        if (state is SentState) {
-          Navigator.pop(context);
-        }
         if (state is FatalErrorFormState) {
-          // Error Screen
+          return ErrorView(state._message);
         }
-        return Text('Error!!');
+        return ErrorView('Unknown error');
       },
     );
-  } 
+  }
 
   Future _showSuccessMessage(
       Transaction transaction, BuildContext context) async {
@@ -205,7 +196,9 @@ class _BasicForm extends StatelessWidget {
                           builder: (contextDialog) {
                             return TransactionAuthDialog(
                               onConfirm: (String password) {
-                                BlocProvider.of<TransactionFormCubit>(context).save(transactionCreated, password, context);
+                                BlocProvider.of<TransactionFormCubit>(context)
+                                    .save(
+                                        transactionCreated, password, context);
                               },
                             );
                           });
